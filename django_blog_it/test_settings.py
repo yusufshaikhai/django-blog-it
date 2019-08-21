@@ -34,7 +34,7 @@ DATABASES = {
         'NAME': BASE_DIR + 'sqlite3.db'
     }
 }
-ALLOWED_HOSTS = ["127.0.0", "localhost"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -47,9 +47,12 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

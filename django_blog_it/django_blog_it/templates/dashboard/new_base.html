@@ -51,6 +51,7 @@
                     </ul>
                   </li> -->
                   <li class="categories"><a href="{% url 'categories' %}">Categories </a></li>
+                  <li class="casestudies"><a href="{% url 'casestudies' %}">Case Studies</a></li>
                   <li class="menu"><a href="{% url 'menus' %}">Menu </a></li>
               {% with request.user.userrole_set.last as user_role %}
                 {% if request.user.is_superuser or user_role.role == "Admin"%}

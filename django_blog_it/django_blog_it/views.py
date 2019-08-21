@@ -16,7 +16,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from .models import Menu, Post, PostHistory, Category, Tags, Image_File, \
     STATUS_CHOICE, ROLE_CHOICE, UserRole, Page, Theme, Google, Facebook, \
-    Post_Slugs
+    Post_Slugs, CaseStudies
 from .forms import *
 from django.conf import settings
 try:
@@ -71,7 +71,6 @@ def admin_logout(request):
     logout(request)
     messages.success(request, 'You are successfully logged out!')
     return HttpResponseRedirect(reverse('admin_login'))
-
 
 class PostList(AdminMixin, ListView):
     model = Post
@@ -1128,3 +1127,100 @@ class ChangePasswordView(LoginRequiredMixin, FormView):
 
     def form_invalid(self, form):
         return JsonResponse({"error": True, "errors": form.errors})
+
+
+class CaseStudiesList(AdminMixin, TemplateView, ProcessFormView):
+    template_name = "dashboard/casestudies/case_studies_list.html"
+
+    def post(self, request, *args, **kwargs):
+        return render(request, self.template_name, self.get_context_data())
+
+    def get_queryset(self):
+        self.casestudies_choices = CaseStudies.objects.all()
+        queryset = self.casestudies_choices
+        if self.request.POST.get('select_status'):
+            if self.request.POST.get('select_status') == "True":
+                queryset = queryset.filter(is_active=True)
+            else:
+                queryset = queryset.filter(is_active=False)
+        if self.request.POST.get('search_text'):
+            queryset = queryset.filter(name__icontains=self.request.POST.get('search_text'))
+        return queryset
+
+    def get_context_data(self, *args, **kwargs):
+        context = {
+            "casestudies_list": self.get_queryset(),
+            'requested_casestudies': self.request.POST.getlist('casestudies'),
+            'casestudies_choices': self.casestudies_choices,
+        }
+        return context
+
+
+class CaseStudiesCreateView(AdminOnlyMixin, CreateView):
+    template_name = "dashboard/casestudies/case_studies_add.html"
+    form_class = CaseStudiesForm
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, 'Successfully added your case study')
+        return HttpResponseRedirect(reverse_lazy('casestudies'))
+        # return JsonResponse({'error': False, 'response': 'Successfully added your case study'})
+
+    def form_invalid(self, form):
+        return HttpResponseRedirect(reverse_lazy('add_casestudies'))
+        # return JsonResponse({'error': True, 'response': form.errors})
+
+
+class CaseStudiesUpdateView(AdminOnlyMixin, UpdateView):
+    template_name = "dashboard/casestudies/case_studies_add.html"
+    model = CaseStudies
+    slug_url_kwarg = "casestudies_slug"
+    form_class = CaseStudiesForm
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, 'Successfully updated your category')
+        return HttpResponseRedirect(reverse_lazy('casestudies'))
+        # return JsonResponse({'error': False, 'response': 'Successfully updated your case study'})
+
+    def form_invalid(self, form):
+        return HttpResponseRedirect(reverse_lazy('edit_casestudies'))
+        # return JsonResponse({'error': True, 'response': form.errors})
+
+
+class CaseStudiesStatusUpdateView(AdminOnlyMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        casestudies = get_object_or_404(CaseStudies, slug=kwargs.get("casestudies_slug"))
+        if casestudies.is_active:
+            casestudies.is_active = False
+        else:
+            casestudies.is_active = True
+        casestudies.save()
+        return HttpResponseRedirect(reverse_lazy("casestudies"))
+
+
+class CaseStudiesDeleteView(AdminOnlyMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        casestudies = get_object_or_404(CaseStudies, slug=kwargs.get("casestudies_slug"))
+        casestudies.delete()
+        return HttpResponseRedirect(reverse_lazy("casestudies"))
+
+class CaseStudiesBulkActionsView(AdminOnlyMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        if 'case_ids[]' in request.GET:
+            if request.GET.get('action') == 'True':
+                CaseStudies.objects.filter(id__in=request.GET.getlist('case_ids[]')).update(is_active=True)
+                messages.success(request, 'Selected Case Study successfully updated as Active')
+            elif request.GET.get('action') == 'False':
+                CaseStudies.objects.filter(id__in=request.GET.getlist('case_ids[]')).update(is_active=False)
+                messages.success(request, 'Selected Case Study successfully updated as Inactive')
+            elif request.GET.get('action') == 'Delete':
+                CaseStudies.objects.filter(id__in=request.GET.getlist('case_ids[]')).delete()
+                messages.success(request, 'Selected Case Study successfully deleted!')
+            return JsonResponse({'response': True})
+        else:
+            messages.warning(request, 'Please select a record to perform this action')
+            return JsonResponse({'response': False})

@@ -110,4 +110,11 @@ urlpatterns = [
         configure_contact_us, name='configure_contact_us'),
     url(r'^dashboard/change-password/$', ChangePasswordView.as_view(), name='change_password'),
 
+    url(r'^dashboard/casestudies/$', CaseStudiesList.as_view(), name='casestudies'),
+    url(r'^dashboard/casestudies/add/$', CaseStudiesCreateView.as_view(), name='add_casestudies'),
+    url(r'^dashboard/casestudies/edit/(?P<casestudies_slug>[-\w]+)/$', CaseStudiesUpdateView.as_view(), name='edit_casestudies'),
+    url(r'^dashboard/casestudies/delete/(?P<casestudies_slug>[-\w]+)/$', CaseStudiesDeleteView.as_view(), name='delete_casestudies'),
+    url(r'^dashboard/casestudies/status/(?P<casestudies_slug>[-\w]+)/$', CaseStudiesStatusUpdateView.as_view(), name='casestudies_status_update'),
+    url(r'^dashboard/bulk_actions_category/$', CaseStudiesBulkActionsView.as_view(), name='bulk_actions_casestudies'),
+    
 ] + static(MEDIA_URL, document_root=MEDIA_ROOT)

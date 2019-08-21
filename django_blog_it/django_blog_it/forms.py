@@ -1,5 +1,5 @@
 from django import forms
-from .models import Post, Category, Page, Menu, ContactUsSettings, ROLE_CHOICE, Theme
+from .models import Post, Category, Page, Menu, ContactUsSettings, ROLE_CHOICE, Theme, CaseStudies
 from django.template.defaultfilters import slugify
 # for authentication
 from django.contrib.auth import authenticate
@@ -249,3 +249,26 @@ class CustomBlogSlugInlineFormSet(forms.BaseInlineFormSet):
                 active_slugs += 1
         if active_slugs > 1:
             raise forms.ValidationError("Only one slug can be active at a time.")
+
+class CaseStudiesForm(forms.ModelForm):
+    class Meta:
+        model = CaseStudies
+        exclude = ()
+
+    def clean_name(self):
+        if not self.instance.id:
+            if CaseStudies.objects.filter(slug=slugify(self.cleaned_data['name'])).exists():
+                raise forms.ValidationError('Casestudies with this Name already exists.')
+        else:
+            if CaseStudies.objects.filter(name__icontains=self.cleaned_data['name']).exclude(id=self.instance.id):
+                raise forms.ValidationError('Casestudies with this Name already exists.')
+        return self.cleaned_data['name']
+
+    def __init__(self, *args, **kwargs):
+        super(CaseStudiesForm, self).__init__(*args, **kwargs)
+        
+        for field in iter(self.fields):
+            if max(enumerate(iter(self.fields)))[0] != field:
+                self.fields[field].widget.attrs.update({
+                    'class': 'form-control', "placeholder": "Please upload the case studies " + field.capitalize()
+                })

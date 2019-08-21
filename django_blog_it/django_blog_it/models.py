@@ -305,3 +305,26 @@ class Facebook(models.Model):
 
     def __str__(self):
         return self.email
+
+class CaseStudies(models.Model):
+    name            = models.CharField(max_length=50, blank=True, null=True)
+    slug            = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    image           = models.ImageField(upload_to='static/uploads/%Y/%m/%d/', height_field=None, width_field=None, max_length=None, blank=True, null=True)
+    doc             = models.FileField(upload_to='static/uploads/%Y/%m/%d/', max_length=100, blank=True, null=True)
+    is_active       = models.BooleanField(default=False)
+    meta_description= models.TextField(max_length=160, null=True, blank=True)
+    meta_keywords   = models.TextField(max_length=255, null=True, blank=True)
+    user            = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    # def get_absolute_url(self):
+    #     return reverse("CaseStudies_detail", kwargs={"pk": self.pk})
+
+    class Meta:
+        ordering = ['-id']
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(CaseStudies, self).save(*args, **kwargs)

@@ -1,0 +1,148 @@
+{% extends 'dashboard/new_base.html' %}
+{% load paginate %}
+{% load blog_tags %}
+{% block title %}Case Studies{% endblock %}
+{% block extra_css %}
+<style type="text/css">
+    table td {
+        padding: 6px;
+    }
+</style>
+{% endblock %}
+{% block content %}
+{% with request.user.userrole_set.last as user_role %}
+    <div class="row no_row_margin heading_count">
+      <div class="heading col-md-6">Case Studies</div>
+      <div class="count_add-new col-md-6 text-right">
+        <ul class="list-inline">
+          <li><a href="#">All ({{casestudies_list|length}}) </a></li>
+        </ul>
+        <span class="add_new"><a href="{% url 'add_casestudies' %}"><i class="fa fa-plus"></i> Add New Case Study</a></span>
+      </div>
+    </div>
+    <div class="filters_row">
+      <div class="col-md-6 filter_left">
+        {% if request.user.is_superuser or user_role.role == "Admin" %}
+          <form class="bulk_actions_form" method='get'>
+            {% csrf_token %}
+            <select class="form-control" name="bulk_actions_select" id='bulk_actions_select'>
+              <option>Choose An Action</option>
+              <option value="True">Active</option>
+              <option value="False">In-Active</option>
+              <option value="Delete">Delete</option>
+            </select>
+            <button class="btn btn-default" type="submit">Apply Action</button>
+          </form>
+        {% endif %}
+      </div>
+      <div class="col-md-6 filter_right">
+        <form action="" method="post" id="casestudies_data" class="form-inline">
+            {% csrf_token %}
+            <input type="text" placeholder="Filter By Title" value="{% if request.POST %}{{ request.POST.search_text }}{% endif %}" name='search_text' class="form-control" />
+            <select class="form-control" id="select_status" name="select_status">
+                <option value="" default>Status</option>
+                <option value="True" {% ifequal request.POST.select_status "True" %}Selected{% endifequal %}>Active</option>
+                <option value="False" {% ifequal request.POST.select_status "False" %}Selected{% endifequal %}>Inactive</option>
+            </select>
+            <button class="btn btn-default" type="submit">Apply Filter</button>
+        </form>
+      </div>
+      <br clear="all">
+    </div>
+    {% if casestudies_list %}
+        <div class="row no_row_margin table_row">
+          <div class="container-fluid">
+            {% paginate 5 casestudies_list %}
+            {% show_pageitems %}
+            <table class="table table-bordered table-striped" id="my_table">
+                <thead>
+                    <tr>
+                    {% if request.user.is_superuser or user_role.role == "Admin" %}
+                        <th width="5%" class="text-center"><input name="bulk_actions" id="selectAll" type="checkbox"></th>
+                    {% endif %}
+                        <th width='30%'>Title</th>
+                        <th width='10%' class="text-center">Status</th>
+                        <th width="10%" class="text-center">Posts Count</th>
+                    {% if request.user.is_superuser or user_role.role == "Admin" %}
+                        <th width='15%' colspan="2">Actions</th>
+                    {% endif %}
+                    </tr>
+                </thead>
+
+                {% for casestudies in casestudies_list %}
+                    <tbody>
+                        <tr>
+                        {% if request.user.is_superuser or user_role.role == "Admin" %}
+                            <td class="text-center"><input name="bulk_actions" class="bulk_actions" value="{{ casestudies.id }}" type="checkbox">
+                            </td>
+                        {% endif %}
+                            <td><a href="#">{{ casestudies.name }}</a></td>
+                            <td class="status_on_off text-center">
+                                <a href="{% url 'casestudies_status_update' casestudies.slug %}" {% if casestudies.is_active %}class="status_on" title="Active"{% else %}class="status_off" title="In-Active"{% endif %} data-toggle="tooltip" data-placement="bottom"><i class="fa fa-circle" aria-hidden="true"></i></a>
+                            </td>
+                            {% comment %} <td class="post_count text-center">
+                                <a href="#">{{ casestudies.category_posts }}</a>
+                            </td> {% endcomment %}
+                            {% if request.user.is_superuser or user_role.role == "Admin" %}
+                                <td class="actions">
+                                    <a href="{% url 'edit_casestudies' casestudies_slug=casestudies.slug %}" class="edit"><i class="fa fa-edit"></i> Edit</a><a href="{% url 'delete_casestudies' casestudies_slug=casestudies.slug %}" class="delete" data-confirm="true"><i class="fa fa-trash-o"></i> Delete</a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    </tbody>
+
+                {% endfor %}
+            </table>
+            <!-- end div of table -->
+
+        <!-- pagination -->
+          <div class="pagination_wrap text-center">
+              {% show_pages %}
+          </div>
+        <!--/ pagination -->
+          {% else %}
+              <h2 align="center">There are no case studies here!</h2>
+          {% endif %}
+        </div>
+    </div>
+{% endwith %}
+{% endblock %}
+{% block js_script %}
+
+    <script type="text/javascript">
+        $('.casestudies').addClass('active');
+
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+
+        $('.select2_category').select2({placeholder: "Select Case Study"});
+
+        $("#selectAll").change(function() {
+          $(".bulk_actions:checkbox").prop('checked', $(this).prop("checked"));
+        });
+
+        $('.bulk_actions_form').submit(function(e){
+            e.preventDefault();
+            var case_ids = [];
+            $.each($(".bulk_actions:checked"), function(){
+                case_ids.push(parseInt($(this).val(), 0));
+            });
+            var action = $('#bulk_actions_select :selected').val();
+
+            $.get("{% url 'bulk_actions_casestudies' %}", {'case_ids':case_ids, 'action': action}, function(data){
+                if(data.response){
+                    window.location="{% url 'casestudies' %}";
+                }else{
+                    window.location="{% url 'casestudies' %}";
+                }
+            }, 'json');
+        })
+
+    $('.pagination li a').click(function(event){
+        event.preventDefault();
+        $('#casestudies_data').attr('action', $(this).attr('href'));
+        $('#casestudies_data').submit();
+    });
+    </script>
+{% endblock %}

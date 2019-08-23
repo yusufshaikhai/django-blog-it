@@ -52,6 +52,5 @@ setup(
         'Pillow',
         'requests',
         'wheel',
-        'microurl'
     ],
 )
